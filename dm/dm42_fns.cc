@@ -50,6 +50,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "core_main.h"
 #include "core_aux.h"
 
+// CUSTOM
+#include "core_base_custom.h"
 
 //#define OLD_PRINTER_CHAR_MASKING
 
@@ -557,7 +559,9 @@ typedef struct {
   uint8_t  stack_layout;  // Current stack layout
   uint8_t  pgm_font_ix;   // Current program font index
   uint8_t  font_offsets[3];// Register font offsets
-  uint8_t  dummy[4];      // .. for future use
+  uint8_t  dummy[3];      // .. for future use
+  uint8_t  reserved : 4;
+  uint8_t  base_dual_radix : 4;
 } __packed savestat_data_t;
 
 
@@ -2940,6 +2944,7 @@ FRESULT statefile_save_DM42part() {
   if ( dat.printer_delay == 0 ) dat.printer_delay = 1;
 
   dat.stack_layout = stack_layout;
+  dat.base_dual_radix = base_display_save();
   
   pgm_res = f_write(ppgm_fp, &dat, sizeof(savestat_data_t), &wr);
 
@@ -3031,7 +3036,11 @@ int reg_prev_ln() {
 }
 
 
-void disp_aligned_line(const char *prompt, const char *s) {
+// CUSTOM
+static int draw_base_value(disp_stat_t *ds, const char *text, int base, int align_right);
+static bool custom_register_separator_allowed();
+
+void disp_aligned_line(const char *prompt, const char *s, int base = 0) {
   char pr[EDIT_PROMPT_LEN+1];
 
   //lcd_putsAt(fReg,ln,""); // Fill the line
@@ -3040,7 +3049,7 @@ void disp_aligned_line(const char *prompt, const char *s) {
   
   lcd_puts(fReg,""); // Fill the line
   fReg->lnfill = 0;
-  if (is_REG_LINES) {
+  if (is_REG_LINES && custom_register_separator_allowed()) {
     int yln = fReg->y+lcd_baseHeight(fReg)+2;
     //if (current_font_nr() < 0) yln += 1;
     if ( yln > fReg->y_top_grd)
@@ -3064,6 +3073,10 @@ void disp_aligned_line(const char *prompt, const char *s) {
   } else
     lcd_puts(fReg,prompt);
   
+  if (draw_base_value(fReg, s, base, !is_REG_ALIGN_LEFT)) {
+    fReg->lnfill = 1;
+    return;
+  }
   if ( !is_REG_ALIGN_LEFT ) {
     // Align to the right
     int newx = LCD_X - strlen(s)*lcd_fontWidth(fReg) - fReg->xoffs;
@@ -3107,12 +3120,14 @@ void disp_reg(const char *prompt, reg_id_t reg_id, int line_reg_nr, int bottom_u
   char buf[buflen];
   int len;
 
-  len = reg2str(buf, buflen-strlen(prompt), reg_id);
+  int base;
+  len = reg2str(buf, buflen-strlen(prompt), reg_id, &base);
   len = hp2font(buf, buf,len); buf[len] = 0;
-  disp_aligned_line(prompt, buf);
+  disp_aligned_line(prompt, buf, base);
 }
 
-
+// CUSTOM
+#include "dm42_base_custom.inc"
 
 int is_plock_disp() {
   if (!is_cur_pgm_locked()) return 0;
@@ -3252,9 +3267,13 @@ void disp_regs(int what) {
       fReg->y -= LCD_MENU_LINES;
     }
 
+    const int stack_bottom = fReg->y;
+    alternate_reg_line alternate;
+    fReg->y = prepare_alternate_reg_line(&alternate, stack_bottom);
+
     if (refresh_mask & LCD_UPD_MAIN) {
       // == Clear main area ==
-      lcd_fillLines(top_y_lines, LCD_EMPTY_VALUE, fReg->y - top_y_lines);
+      lcd_fillLines(top_y_lines, LCD_EMPTY_VALUE, stack_bottom - top_y_lines);
 
 #if 0
       // == TEST ==
@@ -3275,7 +3294,7 @@ void disp_regs(int what) {
         // Print edit line if available
         set_reg_font(get_reg_font_offset(LINE_REG_X));
         // Shortcut the display if the register line is outside the LCD
-        if (reg_prev_ln()) {
+        if (reg_prev_ln() && !custom_draw_base_input()) {
           int plen = strlen(edit_prompt), llen = strlen(edit_line);
           int const linelen = (LCD_X + fReg->xoffs)/lcd_fontWidth(fReg); //(LCD_X - fReg->xoffs)/fReg->f->width;
 
@@ -3323,6 +3342,7 @@ void disp_regs(int what) {
         if ( stack_layout & STACK_REG_A)
           disp_reg("A:",AUX_REG_A, LINE_REG_A, 1);
       }
+      draw_alternate_reg_line(&alternate);
     }
   }
 
@@ -3906,6 +3926,7 @@ void program_main() {
 
           stack_layout = dat.stack_layout;
           if (stack_layout == 0) stack_layout = STACK_XYZTL; // Fall down to default for old savefiles
+          base_display_restore(dat.base_dual_radix);
         }
         deinit_sf_buf();
         f_close(ppgm_fp);
