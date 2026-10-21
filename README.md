@@ -1,44 +1,30 @@
-# DM42PGM - Free42 frontend implementation for DM42
+# DM42PGM for DM42/DM42n
 
-[http://tech.swissmicros.com/DM42PGM](http://tech.swissmicros.com/DM42PGM)
+A custom Free42 frontend for SwissMicros DM42/DM42n calculators, paired with the [extended Free42 core](https://github.com/aiotter/dm42-free42).
+The core repository also provides a desktop GTK application.
 
-- There is DMCP interface doc in progress see [DMCP IFC doc](http://technical.swissmicros.com/dmcp/doc/DMCP-ifc-html/) (or
-you can download HTML zip file from [doc directory](http://technical.swissmicros.com/dm42/doc/)).
+![DM42n screenshot](images/screenshot.bmp)
 
-# Architecture Overview
-## Structure
-The DM Calculator Platform (DMCP) is the OS for the DM42 calculator and comes as a binary file DMCP_flash_X.Y.bin.
-The OS runs executable modules like Free42 which have a .pgm extension.
-Both binaries are found here [link to binaries](http:/technical.swissmicros.com/dm42/firmware)
+## Extensions
 
-## DM42 Menus
-The DM42 has two menus, the DMCP Menu and the System Menu.
-The System Menu is the regular menu as known from previous versions, see 
-[DM42 User Manual](https://technical.swissmicros.com/dm42/doc/dm42_user_manual/)
-for details.
+- Added device rendering for the core's alternate-radix display in `BASE` mode, showing the same value in another radix alongside the main display.
+- Moved the original home-menu entries to `SETUP` and added custom home buttons for the core's history and program-editing features.
 
+  - `AGAIN`: repeat the last command, reinsert the last program instruction, or repeat a search.
+  - `UNDO` / `REDO`: undo or redo calculations, program edits, and cursor movements.
+  - `LBLs`: select a label and move the cursor to it.
+  - `JUMP`: follow the `GTO` or `XEQ` at the cursor without executing it.
+  - `FIND↓`: move to the next matching command or text in the current program.
 
-### The DMCP Menu features these options:
+- Added USB-dependent home buttons in normal mode: connecting USB makes `Disk` appear for USB disk access and `Boot` for bootloader entry.
 
-![dmcp_menu.jpg](/images/dmcp_menu.jpg)
- 1. "Program Info" display information of the program loaded in the CPU
- 1. "Run Program" runs the program loaded in the CPU
- 1. "Load Program" copies an executable module from the FAT partition to the flash memory of the CPU
- 1. "Load QSPI from FAT" should not be needed
- 1. "Settings" for Time and Date
- 1. "Active USB Disk" puts the DM42 in USB mode for file copy
- 1. "Enter System Menu" jumps to the main System Menu
- 1. "About" displays general information
+## Build and flash
 
-## Update procedure
+Use [DM42PGM.nix](https://github.com/aiotter/DM42PGM.nix) to build firmware with the custom frontend and core.
+Follow its [USB flashing instructions](https://github.com/aiotter/DM42PGM.nix#direct-usb-flashing) to install on a DM42n.
 
-1. Active USB disk in the setup menu
-1. Copy both [DMCP_flash_X.Y.bin and the .pgm](http://technical.swissmicros.com/dm42/firmware) file from the PC/MAC to the FAT partition of the DM42
-1. Eject DM42 from PC/MAC
-1. On the DM42, SETUP > System > Flash firmware from FAT.
-1. Once finished the calculator resets and displays the DMCP Menu.
-1. Choose "Load Program" and select DM-X.Y.Z.pgm
-1. Once loaded, select "Run Program" and Free42 starts.
+## Development
 
-# Building Instructions
-Read the [README_build](README_build.md) .
+The Makefile automatically compiles `dm/*_custom.cc`, with module interfaces declared in `.h` files.
+
+- [Frontend tests](tests/README.md)
