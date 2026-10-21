@@ -52,6 +52,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // CUSTOM
 #include "core_base_custom.h"
+#include "dm42_home_menu_custom.h"
 
 //#define OLD_PRINTER_CHAR_MASKING
 
@@ -1694,6 +1695,8 @@ void shell_annunciators(int updn, int shf, int prt, int run, int g, int rad) {
     }
     if (shf != -1 && NOT_ANN(SHIFT) == shf) {
       SETBY_ANN(shf,ANN_SHIFT);
+      // Refresh home-key labels when the active Shift binding changes.
+      if (!core_menu()) lcd_changed |= LCD_CHG_REGS;
       //skin_repaint_annunciator(2, ann_shift);
     }
     if (prt != -1 && NOT_ANN(PRINT) == prt) {
@@ -3179,10 +3182,7 @@ void disp_regs(int what) {
 
   // == Display DM42 top menu ==
   if ( is_disp_main_menu() && !display_core_menu ) {
-    const char * menu[] = 
-      // {"Menu-","Vol-","Vol+","RegFmt","Font-","Font+"};
-      {"Help","Menu","","Volume","RegFmt","FonSz"};
-    lcd_draw_menu_keys(menu);
+    draw_custom_home_menu(ANN(SHIFT));
   }
 
 
@@ -3769,8 +3769,10 @@ void program_main() {
     }
 
     // Force header repaint when USB/BAT power changes
-    if ( ST(STAT_POWER_CHANGE) )
+    if ( ST(STAT_POWER_CHANGE) ) {
       force_header_timeout();
+      lcd_changed |= LCD_CHG_FORCE;
+    }
 
     // =======================
     // Externally forced LCD repaint
@@ -4030,92 +4032,11 @@ void program_main() {
 #endif
 
 
-    /* =========================
-       Main menu - Function keys
-
-           F1 - Help
-           F2 - Toggle main menu
-           F3 - (not assigned)
-           F4 - Increase volume 
-     Shift-F4 - Decrease volume
-           F5 - Stack alignment
-     Shift-F5 - Vintage/sans font
-           F6 - Increase font size
-     Shift-F6 - Decrease font size
-    */
-
-    if ( !core_menu() && key>=KEY_F1 && key<=KEY_F6 ) {
-      int consume_key = 1;
-      int redraw = 1;
-
-      switch (key) {
-        case KEY_F1:
-          // Start Help system
-          //test_help_fonts();
-          //help_demo();
-          if ( !ANN(RUN) ) { // We don't want to display help during program run
-            start_help();
-            calc_lcd_redraw();
-          } 
-          break;
-
-        case KEY_F2:
-          // Toggle main menu visibility
-          set_disp_main_menu(!is_disp_main_menu());
-          break;
-        
-        case KEY_F3:
-          break;
-
-        case KEY_F4:
-          ANN(SHIFT) ? beep_volume_down() : beep_volume_up();
-          consume_key = 0; // We want the beep (by passing invalid key to core)
-          redraw = 0; // No visual changes
-          break;
-
-        case KEY_F5:
-          if ( ANN(SHIFT) ) {
-            // Shift-F5 = Toggle to HP font
-            if ( is_pgm_mode() )
-              pgm_font_ix = lcd_toggleFontT(pgm_font_ix);
-            else
-              reg_font_ix = lcd_toggleFontT(reg_font_ix);
-          } else {
-            // F5 = Stack alignment
-            draw_reg_mode++;
-            if(draw_reg_mode > DRAW_REG_MODE_MAX) draw_reg_mode=0;
-          }
-          break;
-
-        case KEY_F6:
-          if ( ANN(SHIFT) ) {
-            // Shift-F6 = decrease font size
-            if ( is_pgm_mode() )
-              pgm_font_ix = lcd_prevFontNr(pgm_font_ix);
-            else
-              reg_font_ix = lcd_prevFontNr(reg_font_ix);
-          } else {
-            // F6 = Increase font size
-            if ( is_pgm_mode() )
-              pgm_font_ix = lcd_nextFontNr(pgm_font_ix);
-            else
-              reg_font_ix = lcd_nextFontNr(reg_font_ix);
-          }
-          break;
-      }
-
-      // Consume shift
-      if ( ANN(SHIFT) )
-        clr_shift();
-
-      if ( consume_key ) key = -1;
-
-      if ( redraw ) { // We want complete update after font size change // && !ANN(RUN)
-        disp_regs(LCD_UPD_ALL); // LCD_UPD_DFLT
-        lcd_refresh_wait();
-      }
-
-    } // == End of main menu function keys handling
+    // CUSTOM: Dispatch core commands below, after the usual key/timer preparation.
+    bool home_shifted = ANN(SHIFT);
+    auto selected_home_action = prepare_custom_home_key(
+        key, home_shifted, !ANN(RUN) && is_graphics <= 1);
+    if (ANN(SHIFT) && !home_shifted) clr_shift();
 
 
     if (key == KEY_SCREENSHOT) {
@@ -4230,7 +4151,7 @@ void program_main() {
       // Press key
       printf("== key press %i(%x) shift=%i nomenu=%i\n",key,key, ANN(SHIFT)!=0, no_menu_key);
       mark_region(MARK_42_KEYP);
-      keep_running = core_keydown_ex(key, &enqueued, &repeat, no_menu_key);
+      keep_running = dispatch_custom_home_key(selected_home_action, key, &enqueued, &repeat, no_menu_key);
       no_region();
       printf("end of keydown: keep_running=%i  enqueued=%i  repeat=%i\n", keep_running, enqueued, repeat);
 
