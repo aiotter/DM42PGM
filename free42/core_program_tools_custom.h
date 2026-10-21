@@ -12,7 +12,8 @@ extern "C" {
 
 bool core_program_label_jump(bool *enqueued, int *repeat);
 bool core_program_follow(bool *enqueued, int *repeat);
-bool core_program_find(bool reverse, bool *enqueued, int *repeat);
+bool core_program_insert_after(bool *enqueued, int *repeat);
+bool core_program_request_delete(bool *enqueued, int *repeat);
 
 #ifdef __cplusplus
 }
