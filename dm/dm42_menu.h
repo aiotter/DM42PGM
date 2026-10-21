@@ -117,6 +117,10 @@ extern const smenu_t   MID_STACK_AREA; // Stack area config
 
 #define MI_DEVEL_TEST      77
 
+// CUSTOM: 80-86 belong to the settings relocated from the main menu.
+#define MI_HELP            78
+#define MI_RELOCATED_MAIN_MENU 79
+
 // --------------------------------
 
 #define MRET_SAVESTATE   777

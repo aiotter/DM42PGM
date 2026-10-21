@@ -49,6 +49,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "core_aux.h"
 
 
+// CUSTOM
+#include "dm42_relocated_main_menu_custom.h"
+
+
 extern "C" {
 
 #include <main.h>
@@ -765,6 +769,8 @@ pgm_exp_fail:
 
 
 const uint8_t mid_menu[] = {
+    MI_HELP,
+    MI_RELOCATED_MAIN_MENU,
     MI_FILE,
     MI_STATEFILE,
     MI_PRINT_MENU,
@@ -1064,7 +1070,7 @@ int run_menu_item(uint8_t line_id) {
     break;
 
    default:
-    ret = MRET_UNIMPL;
+    ret = run_relocated_main_menu_item(line_id);
     break;
   }
 
@@ -1184,7 +1190,7 @@ const char * menu_line_str(uint8_t line_id, char * s, const int slen) {
   case MI_PRINT_DBLNL:     ln = opt_str(s, " Double Newline",    is_print_to_file(PRINT_DBLNL));     break;
 
   default:
-    ln = NULL;
+    ln = relocated_main_menu_line_str(line_id, s, slen);
     break;
   }
 

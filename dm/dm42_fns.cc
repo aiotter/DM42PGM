@@ -3128,6 +3128,7 @@ void disp_reg(const char *prompt, reg_id_t reg_id, int line_reg_nr, int bottom_u
 
 // CUSTOM
 #include "dm42_base_custom.inc"
+#include "dm42_relocated_main_menu_custom.inc"
 
 int is_plock_disp() {
   if (!is_cur_pgm_locked()) return 0;
