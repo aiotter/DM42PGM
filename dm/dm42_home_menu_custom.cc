@@ -133,6 +133,7 @@ static const key_binding normal_home_keys[] = {
   { KEY_F1, Condition::None, "%", command("%") },
   { KEY_F2, Condition::None, "nCr", command("COMB") },
   { KEY_F2, Condition::Shifted, "nPr", command("PERM") },
+  { KEY_F3, Condition::None, "TIME", command("T.CALC") },
   { KEY_F4, Condition::UsbConnected, "Disk", operation(Operation::UsbDisk) },
   { KEY_F4, Condition::Shifted | Condition::UsbConnected, "Boot", operation(Operation::Bootloader) },
   { KEY_F5, Condition::None, "AGAIN", operation(Operation::Repeat) },

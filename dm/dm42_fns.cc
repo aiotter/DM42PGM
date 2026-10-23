@@ -52,6 +52,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // CUSTOM
 #include "core_base_custom.h"
+#include "core_time_custom.h"
 #include "dm42_home_menu_custom.h"
 
 //#define OLD_PRINTER_CHAR_MASKING
@@ -561,7 +562,7 @@ typedef struct {
   uint8_t  pgm_font_ix;   // Current program font index
   uint8_t  font_offsets[3];// Register font offsets
   uint8_t  dummy[3];      // .. for future use
-  uint8_t  reserved : 4;
+  uint8_t  time_display : 4;
   uint8_t  base_dual_radix : 4;
 } __packed savestat_data_t;
 
@@ -2947,6 +2948,7 @@ FRESULT statefile_save_DM42part() {
   if ( dat.printer_delay == 0 ) dat.printer_delay = 1;
 
   dat.stack_layout = stack_layout;
+  dat.time_display = time_display_save();
   dat.base_dual_radix = base_display_save();
   
   pgm_res = f_write(ppgm_fp, &dat, sizeof(savestat_data_t), &wr);
@@ -3930,6 +3932,7 @@ void program_main() {
           stack_layout = dat.stack_layout;
           if (stack_layout == 0) stack_layout = STACK_XYZTL; // Fall down to default for old savefiles
           base_display_restore(dat.base_dual_radix);
+          time_display_restore(dat.time_display);
         }
         deinit_sf_buf();
         f_close(ppgm_fp);

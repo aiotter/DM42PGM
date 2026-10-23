@@ -12,6 +12,8 @@ The core repository also provides a desktop GTK application.
 
   - `AGAIN`: repeat the last command, reinsert the last program instruction, or repeat a search.
   - `UNDO` / `REDO`: undo or redo calculations, program edits, and cursor movements.
+  - `TIME`: open time display and entry mode from the normal home menu, or execute `T.CALC`. Select precision with `H.M`, `H.MS`, or `H.MSs`, and display rounding with `RND` or `TRNC`.
+    During number entry, `1d` multiplies the entered duration by 24 and confirms it; otherwise it enters 24 hours.
   - `LBLs`: select a label and move the cursor to it.
   - `JUMP`: follow the `GTO` or `XEQ` at the cursor without executing it.
   - `FIND↓`: move to the next matching command or text in the current program.
