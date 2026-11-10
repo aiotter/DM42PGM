@@ -20,6 +20,7 @@ When the calculator detects USB power in normal mode, the HOME menu offers these
 ### Display
 
 - In `BASE` mode, the stack display can show the X register in a second radix.
+- In program mode, a heading such as `PGM 2/4` appears above line 00 and shows the current program's position and the total number of stored programs.
 
 ## Build and flash
 

@@ -52,6 +52,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // CUSTOM
 #include "core_base_custom.h"
+#include "core_program_tools_custom.h"
 #include "core_time_custom.h"
 #include "dm42_home_menu_custom.h"
 #include "dm42_menu_label.h"
@@ -3134,7 +3135,7 @@ int is_plock_disp() {
 #ifndef TESTL
 
 void disp_regs(int what) {
-  static int last_pgm_top_line = 0;
+  static int last_pgm_top_line = -1;
   char bb[LCD_HP_CHARS+2];
   int len;
 
@@ -3203,7 +3204,10 @@ void disp_regs(int what) {
     // Show displays current pgm line over two lcd lines
     if (is_show) font_lines--;
 
-    if ( pi.pgm_line < last_pgm_top_line ) 
+    // CUSTOM: Display row -1 holds the program position and scrolls with the listing.
+    if ( pi.pgm_line == 0 )
+      last_pgm_top_line = -1;
+    else if ( pi.pgm_line < last_pgm_top_line )
       last_pgm_top_line = pi.pgm_line;
     if ( last_pgm_top_line <= (pi.pgm_line - font_lines) )
       last_pgm_top_line = pi.pgm_line - font_lines + 1;
@@ -3216,6 +3220,18 @@ void disp_regs(int what) {
 
     int pgm_line = last_pgm_top_line;
     int pgm_line_end = last_pgm_top_line + font_lines;
+
+    // CUSTOM: Show header line
+    if (pgm_line == -1) {
+      int index, count;
+      core_get_program_position(&index, &count);
+      char heading[32];
+      snprintf(heading, sizeof(heading), " -== PGM %d/%d ==-", index + 1, count);
+      lcd_setLine(fReg, last_line++);
+      lcd_puts(fReg, heading);
+      pgm_line++;
+    }
+
     int is_edit = is_program_line_entry();
     for( ; !pln.is_end && pgm_line < pgm_line_end; pgm_line++ ) {
       if ( pgm_line == pi.pgm_line ) {
